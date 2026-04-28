@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: login
-        run: docker login --u jinlong11222356 -p $(echo ${{ github.token }}) ghcr.io
+        run: docker login -u jinlong11222356 -p $(echo ${{ github.token }}) ghcr.io
       - name: build
         run: | 
           docker build -t ghcr.io/jinlong11222356/altman:${{ github.sha }} .
