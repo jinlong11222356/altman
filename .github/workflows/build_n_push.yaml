@@ -1,0 +1,21 @@
+name: build and push
+on:
+  push:
+    branches: [main]
+jobs:
+  build_n_push:
+    permissions:
+      packages: write
+    runs_on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: login
+        run: docker login --u jinlong11222356 -p $(echo ${{ github.token }}) ghcr.io
+      - name: build
+        run: | 
+          docker build -t ghcr.io/jinlong11222356/altman:${{ github.sha }} .
+          docker tag ghcr.io/jinlong11222356/altman:${{ github.sha }} ghcr.io/jinlong11222356/altman:latest
+      - name: push
+        run: |
+          docker push ghcr.io/jinlong11222356/altman:${{ github.sha }}
+          docker push ghcr.io/jinlong11222356/altman:latest
