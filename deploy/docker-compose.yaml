@@ -1,0 +1,63 @@
+services:
+  bot:
+    image: ghcr.io/jinlong11222356/altman:${ALTMAN_TAG:-latest}
+    container_name: bot
+    restart: unless-stopped
+    networks:
+      - proxy
+    environment:
+      - "WH_URL=${WH_URL}"
+      - "BOT_TOKEN=${BOT_TOKEN}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.bot.entrypoints=websecure"
+
+      - "traefik.http.routers.bot.rule=Host(`${WH_URL}`)"
+      - "traefik.http.routers.bot.tls=true"
+      - "traefik.http.routers.bot.tls.certresolver=dns-cloudflare"
+      
+      - "traefik.http.services.bot-deploy.loadbalancer.server.port=8080"
+      
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    restart: unless-stopped
+    networks:
+      - proxy
+    ports:
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - certs:/certs
+    security_opt:
+      - label:disable
+      - no-new-privileges:true
+    environment:
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_API_KEY}
+
+    command:
+      - "--log.level=${TRAEFIK_LOG_LEVEL:-INFO}"
+
+      # TLS cert
+      - "--certificatesresolvers.dns-cloudflare.acme.dnsChallenge=true"
+      - "--certificatesresolvers.dns-cloudflare.acme.storage=/certs/acme.json"
+      - "--certificatesresolvers.dns-cloudflare.acme.dnschallenge.provider=cloudflare"
+      
+      # EntryPoints
+      - "--entrypoints.websecure.address=:443"
+      - "--entrypoints.websecure.http.tls=true"
+
+      # Providers 
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=proxy"
+
+    labels:
+      - "traefik.enable=true"
+
+networks:
+  proxy:
+    name: proxy
+
+volumes:
+  certs:
