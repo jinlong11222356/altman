@@ -10,7 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - name: login
-        run: docker login -u jinlong11222356 -p $(echo ${{ github.token }}) ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: jinlong11222356
+          password: ${{ github.token }}
       - name: build
         run: | 
           docker build -t ghcr.io/jinlong11222356/altman:${{ github.sha }} .
