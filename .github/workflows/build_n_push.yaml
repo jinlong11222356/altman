@@ -18,7 +18,7 @@ jobs:
       - name: build
         run: | 
           docker build -t ghcr.io/jinlong11222356/altman:${{ github.sha }} .
-          docker build -t --target migration ghcr.io/jinlong11222356/altman-migration:${{ github.sha }} .
+          docker build --target migration -t ghcr.io/jinlong11222356/altman-migration:${{ github.sha }} .
           docker tag ghcr.io/jinlong11222356/altman:${{ github.sha }} ghcr.io/jinlong11222356/altman:latest
           docker tag ghcr.io/jinlong11222356/altman-migration:${{ github.sha }} ghcr.io/jinlong11222356/altman-migration:latest
 
