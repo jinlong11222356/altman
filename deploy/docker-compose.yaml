@@ -5,9 +5,22 @@ services:
     restart: unless-stopped
     networks:
       - proxy
+      - db
     environment:
       - "WH_URL=${WH_URL}"
       - "BOT_TOKEN=${BOT_TOKEN}"
+      - "DB_URL=${POSTGRES_URL}"
+      - "GROUP_ID=${GROUP_ID}"
+      - "MODER_GROUP_ID=${MODER_GROUP_ID}"
+      - "OPS_ID=${OPS_ID}"
+      - "INIT_PROMPT=${INIT_PROMPT}"
+
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      db:
+        condition: service_healthy
+    
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.bot.entrypoints=websecure"
@@ -18,6 +31,44 @@ services:
       
       - "traefik.http.services.bot-deploy.loadbalancer.server.port=8080"
       
+  migration:
+    image: ghcr.io/jinlong11222356/altman-migration:${ALTMAN_TAG:-latest}
+    container_name: migration
+    
+    command: -database ${POSTGRES_URL} -path /migrations/ up
+    networks:
+      - db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:alpine
+    container_name: db
+    environment:
+      - "POSTGRES_USER=${POSTGRES_USER}"
+      - "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+      - "POSTGRES_DB=${POSTGRES_DB}"
+      - "POSTGRES_PORT=${POSTGRES_PORT}"
+    volumes:
+      - dbdata:/var/lib/postgresql
+    networks:
+      - db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  adminer:
+    image: adminer
+    restart: always
+    networks:
+      - db
+    ports:
+      - "2222:8080"
+  
   traefik:
     image: traefik:v3.6
     container_name: traefik
@@ -55,9 +106,14 @@ services:
     labels:
       - "traefik.enable=true"
 
-networks:
-  proxy:
-    name: proxy
 
 volumes:
   certs:
+  dbdata:
+
+
+networks:
+  proxy:
+    name: proxy
+  db:
+    name: db

@@ -6,6 +6,12 @@ services:
     pull_policy: never
     networks:
       - tunnel
+  
+  migration:
+    build:
+      context: ..
+      target: migration
+    pull_policy: never
 
   cloudflare-tunnel:
     image: cloudflare/cloudflared:latest
